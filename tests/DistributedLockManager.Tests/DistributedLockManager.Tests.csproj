@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NUnit" />
+    <PackageReference Include="NUnit3TestAdapter" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="NSubstitute" />
+    <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="DotNet.Testcontainers" />
+    <PackageReference Include="Aspire.StackExchange.Redis.DistributedCaching" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/DistributedLockManager/DistributedLockManager.csproj" />
+  </ItemGroup>
+</Project>
