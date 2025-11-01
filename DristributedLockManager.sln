@@ -4,8 +4,6 @@ VisualStudioVersion = 17.0.0.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DistributedLockManager", "src\DistributedLockManager\DistributedLockManager.csproj", "{E2B7A9D0-3F73-4B3C-9B7A-1E2D3C4F5A6B}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{B15027B8-0318-44F2-A9F5-0CDB763B89A1}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DistributedLockManager.Tests", "tests\DistributedLockManager.Tests\DistributedLockManager.Tests.csproj", "{234AF171-8E3B-40ED-AB77-C2C2660E3573}"
 EndProject
 Global
@@ -22,8 +20,5 @@ Global
 		{234AF171-8E3B-40ED-AB77-C2C2660E3573}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{234AF171-8E3B-40ED-AB77-C2C2660E3573}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{234AF171-8E3B-40ED-AB77-C2C2660E3573}.Release|Any CPU.Build.0 = Release|Any CPU
-	EndGlobalSection
-	GlobalSection(NestedProjects) = preSolution
-		{234AF171-8E3B-40ED-AB77-C2C2660E3573} = {B15027B8-0318-44F2-A9F5-0CDB763B89A1}
 	EndGlobalSection
 EndGlobal
