@@ -4,10 +4,21 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <!-- Include README in the generated NuGet package and set repository/project links -->
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/Tricksfor-Organization/DistributedLockManager</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageProjectUrl>https://github.com/Tricksfor-Organization/DistributedLockManager</PackageProjectUrl>
+    <Authors>Tricksfor-Organization</Authors>
+    <Description>Distributed locking library using Redis. Provides an easy-to-use distributed lock service for coordinating access across processes.</Description>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Aspire.StackExchange.Redis.DistributedCaching" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
     <PackageReference Include="RedLock.net" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Ensure the README is included inside the nupkg root so NuGet will display it -->
+    <None Include="README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 </Project>
