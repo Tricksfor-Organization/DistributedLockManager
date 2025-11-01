@@ -42,9 +42,11 @@ jobs:
 
       - name: Run tests (if any)
         run: |
-          set -e
-          # run tests only if test projects exist
-          if ls **/*Tests/*.csproj 1> /dev/null 2>&1; then
+          # fail fast and treat unset vars as errors
+          set -euo pipefail
+          # run tests only if test projects exist. Use find for a robust, recursive check
+          # (works regardless of shell globstar settings on the runner)
+          if find . -type f -name '*.Tests.csproj' -print -quit | grep -q .; then
             dotnet test --no-build --verbosity normal
           else
             echo "No test projects found. Skipping tests."
