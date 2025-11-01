@@ -1,5 +1,12 @@
 name: CI
 
+env:
+  # Optional secret to prefix the package id (e.g. Tricksfor). Leave unset to keep project name as-is.
+  NUGET_PACKAGE_PREFIX: ${{ secrets.NUGET_PACKAGE_PREFIX }}
+  NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+  APPLICATION_NAME: DistributedLockManager
+
+
 on:
   push:
     # run on pushes to any branch and on tag pushes matching v*.*.*
@@ -35,10 +42,10 @@ jobs:
           key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
 
       - name: Restore
-        run: dotnet restore src/DistributedLockManager/DistributedLockManager.csproj
+        run: dotnet restore src/${{ env.APPLICATION_NAME }}/${{ env.APPLICATION_NAME }}.csproj
 
       - name: Build
-        run: dotnet build src/DistributedLockManager/DistributedLockManager.csproj --configuration Release --no-restore
+        run: dotnet build src/${{ env.APPLICATION_NAME }}/${{ env.APPLICATION_NAME }}.csproj --configuration Release --no-restore
 
       - name: Run tests (if any)
         run: |
@@ -66,18 +73,29 @@ jobs:
       - name: Pack
         if: github.event_name == 'release' && github.event.action == 'published'
         run: |
-          # If PACKAGE_VERSION is set (from a release tag), pass it to dotnet pack so the nupkg gets the release version.
+          # Compute package ID using optional prefix. Do not fail if prefix is empty.
           if [ -n "${PACKAGE_VERSION:-}" ]; then
             echo "Packing with version $PACKAGE_VERSION"
-            dotnet pack src/DistributedLockManager/DistributedLockManager.csproj -c Release -o ./nupkgs --no-build --include-symbols --include-source /p:PackageVersion=$PACKAGE_VERSION
+          fi
+
+          # Use shell environment variables inside the run script. These are populated
+          # from the workflow-level `env:` (which can include secrets).
+          if [ -n "${NUGET_PACKAGE_PREFIX:-}" ]; then
+            PACKAGE_ID="${NUGET_PACKAGE_PREFIX}.${APPLICATION_NAME}"
           else
-            dotnet pack src/DistributedLockManager/DistributedLockManager.csproj -c Release -o ./nupkgs --no-build --include-symbols --include-source
+            PACKAGE_ID="${APPLICATION_NAME}"
+          fi
+
+          echo "Using PackageId=$PACKAGE_ID"
+
+          if [ -n "${PACKAGE_VERSION:-}" ]; then
+            dotnet pack src/${{ env.APPLICATION_NAME }}/${{ env.APPLICATION_NAME }}.csproj -c Release -o ./nupkgs --no-build --include-symbols --include-source /p:PackageVersion=$PACKAGE_VERSION /p:PackageId="$PACKAGE_ID"
+          else
+            dotnet pack src/${{ env.APPLICATION_NAME }}/${{ env.APPLICATION_NAME }}.csproj -c Release -o ./nupkgs --no-build --include-symbols --include-source /p:PackageId="$PACKAGE_ID"
           fi
 
       - name: Publish NuGet package
         if: github.event_name == 'release' && github.event.action == 'published'
-        env:
-          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
         run: |
           echo "Publishing packages found in ./nupkgs"
           ls -la ./nupkgs || true
