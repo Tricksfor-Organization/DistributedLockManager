@@ -1,78 +1,78 @@
 # DistributedLockManager
 
-A robust .NET library that provides distributed locking capabilities using Redis, designed for scalable applications requiring distributed synchronization.
+DistributedLockManager is a robust .NET library for distributed locking using Redis and the RedLock algorithm. It is designed for scalable applications that require distributed synchronization and safe resource access across multiple processes or services.
 
 ## Features
 
-- Redis-based distributed locking using the RedLock algorithm
-- Support for both void and result-returning operations
+- Redis-based distributed locking (RedLock algorithm)
+- Supports both void and result-returning operations
 - Configurable lock expiry, wait, and retry times
-- Cancellation support via CancellationToken
+- Cancellation support via `CancellationToken`
 - Easy integration with dependency injection
-- Thread-safe operations
-- Automatic lock release through IAsyncDisposable
+- Thread-safe and automatic lock release
 
 ## Installation
 
+Install via NuGet (coming soon):
+
 ```bash
-dotnet add package DistributedLockManager  # Coming soon to NuGet
+dotnet add package Tricksfor.DistributedLockManager
 ```
 
-## Quick Start
+Or build from source:
 
-1. Add the required services to your dependency injection container:
+```bash
+dotnet build DistributedLockManager.sln -c Release
+```
+
+## Prerequisites
+
+- .NET 8.0 or later
+- Redis server (local, docker or remote)
+
+## Usage
+
+### 1. Register Services
+
+Add the required services to your dependency injection container:
 
 ```csharp
 services.AddDistributedLockManager();
 ```
 
-2. Inject and use the service:
+#### If you are using .NET Aspire
+
+You do **not** need to manually register `IConnectionMultiplexer` if you have already added Redis to your Aspire project as described in the [Microsoft Aspire documentation](https://learn.microsoft.com/en-us/dotnet/aspire/).
+
+#### If you are not using Aspire
+
+Register the Redis connection multiplexer:
 
 ```csharp
-public class UserService
-{
-    private readonly IDistributedLockService _lockService;
-
-    public UserService(IDistributedLockService lockService)
-    {
-        _lockService = lockService;
-    }
-
-    public async Task UpdateUserProfileAsync(int userId, UserProfile profile)
-    {
-        await _lockService.RunWithLockAsync(
-            async () =>
-            {
-                // Your update logic here
-                await SaveUserProfile(userId, profile);
-            },
-            key: $"user:{userId}:profile",
-            cancellationToken: CancellationToken.None
-        );
-    }
-}
+services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect("localhost:6379"));
 ```
 
-## Usage Examples
+### 2. Use in Your Code (Integration Test Style)
 
-### Basic Usage (void operations)
+You can use the distributed lock service for both void and result-returning operations. Here is an example similar to the integration tests:
+
+### Result Returning (of type TResult) Operations
 
 ```csharp
-// For operations that don't return a value
-await _lockService.RunWithLockAsync(
-    async () => await ProcessData(),
-    "process-data-lock",
+// For operations that return a value
+var distributedLockService = serviceProvider.GetRequiredService<IDistributedLockService<TResult>>();
+var result = await distributedLockService.RunWithLockAsync(
+    async () => await ProcessDataAsync(),
     CancellationToken.None
 );
 ```
 
-### With Return Value
+### Void Operations
 
 ```csharp
-// For operations that return a value
-var result = await _lockService<int>.RunWithLockAsync(
-    async () => await CalculateTotal(),
-    "calculate-total-lock",
+await distributedLockService.RunWithLockAsync(
+    async () => await ProcessDataAsync(),
+    "process-data-lock",
     CancellationToken.None
 );
 ```
@@ -80,7 +80,7 @@ var result = await _lockService<int>.RunWithLockAsync(
 ### Custom Lock Parameters
 
 ```csharp
-await _lockService.RunWithLockAsync(
+await distributedLockService.RunWithLockAsync(
     async () => await LongRunningOperation(),
     "long-operation-lock",
     CancellationToken.None,
@@ -92,17 +92,17 @@ await _lockService.RunWithLockAsync(
 
 ## Lock Parameters
 
-- `expiryInSecond`: Duration the lock should be held (default: 30 seconds)
-- `waitInSecond`: Maximum time to wait for lock acquisition (default: 10 seconds)
-- `retryInSecond`: Time between retry attempts (default: 1 second)
+- `expiryInSecond`: Duration the lock is held (default: 30 seconds)
+- `waitInSecond`: Max time to wait for lock (default: 10 seconds)
+- `retryInSecond`: Time between retries (default: 1 second)
 
 ## Exception Handling
 
-The service throws `InvalidOperationException` when:
+`InvalidOperationException` is thrown if:
 - Lock acquisition fails after the wait time
-- The resource is already locked (for operations with return values)
+- The resource is already locked
 
-Always implement appropriate error handling:
+Example:
 
 ```csharp
 try
@@ -119,37 +119,6 @@ catch (Exception ex)
 }
 ```
 
-## Building from Source
-
-```bash
-dotnet build DistributedLockManager.sln -c Release
-```
-
-## Prerequisites
-
-- .NET 8.0 or later
-- Redis server
-- StackExchange.Redis
-- RedLock.net
-
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Roadmap
-
-- [ ] Add unit tests
-- [ ] Add integration tests with Redis
-- [ ] Implement retry policies
-- [ ] Add monitoring and metrics
-- [ ] Create NuGet package
-- [ ] Add CI/CD pipeline
-- [ ] Add documentation site
+This project is licensed under the MIT License. See the LICENSE file for details.
