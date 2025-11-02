@@ -9,7 +9,7 @@ using DotNet.Testcontainers.Containers;
 using NUnit.Framework;
 using System.Linq;
 
-namespace DistributedLockManager.Tests.Integration;
+namespace DistributedLockManager.Tests;
 
 [TestFixture]
 public class DistributedLockServiceIntegrationTests
