@@ -29,9 +29,9 @@ public class DistributedLockServiceIntegrationTests
             .WithPortBinding(RedisPort, true)
             .Build();
 
-        await _redisContainer.StartAsync();
-
         if (_redisContainer == null) Assert.Fail("Redis container not started");
+
+        await _redisContainer!.StartAsync();
         var container = _redisContainer!;
         var host = container.Hostname;
         var port = container.GetMappedPublicPort(RedisPort);
