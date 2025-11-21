@@ -8,6 +8,7 @@ using DotNet.Testcontainers.Builders;
 using DotNet.Testcontainers.Containers;
 using NUnit.Framework;
 using System.Linq;
+using Shouldly;
 
 namespace DistributedLockManager.Tests;
 
@@ -68,9 +69,9 @@ public class DistributedLockServiceIntegrationTests
         var service = scope.ServiceProvider.GetRequiredService<IDistributedLockService<bool>>();
 
         var executed = false;
-        executed = await service.RunWithLockAsync(async () => await SampleAsync(executed), "integration:test:key", CancellationToken.None, expiryInSecond: 5, waitInSecond: 2, retryInSecond: 1);
+        executed = await service.RunWithLockAsync(SampleAsync, "integration:test:key", CancellationToken.None, expiryInSecond: 5, waitInSecond: 2, retryInSecond: 1);
 
-        Assert.IsTrue(executed, "Action should have been executed when lock acquired");
+        executed.ShouldBeTrue("Action should have been executed when lock acquired");
     }
     
     [Test, Order(2)]
@@ -108,13 +109,12 @@ public class DistributedLockServiceIntegrationTests
         await Task.WhenAll(tasks);
 
         // Only one should ever be in the critical section at a time
-        Assert.LessOrEqual(maxConcurrent, 1, $"Expected no concurrent executions, but saw {maxConcurrent}");
-        Assert.IsTrue(tasks.All(t => t.Result), "All tasks should complete successfully");
+        maxConcurrent.ShouldBeLessThanOrEqualTo(1, $"Expected no concurrent executions, but saw {maxConcurrent}");
+        tasks.All(t => t.Result).ShouldBeTrue("All tasks should complete successfully");
     }
 
-    private static async Task<bool> SampleAsync(bool executed)
+    private static async Task<bool> SampleAsync()
     {
-        executed = true;
-        return await Task.FromResult(executed);
+        return await Task.FromResult(true);
     }
 }
