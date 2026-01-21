@@ -17,33 +17,39 @@ public class DistributedLockServiceIntegrationTests
 {
     private IServiceScope? scope;
     private IContainer? _redisContainer;
+    private IConnectionMultiplexer? _connectionMultiplexer;
     private const string RedisImage = "redis:latest";
     private const int RedisPort = 6379;
 
     [OneTimeSetUp]
     public async Task OneTimeSetUp()
     {
-        _redisContainer = new ContainerBuilder()
-            .WithImage(RedisImage)
+        _redisContainer = new ContainerBuilder(RedisImage)
             .WithCleanUp(true)
             .WithName($"dtm-redis-{Guid.NewGuid():N}")
             .WithPortBinding(RedisPort, true)
+            .WithWaitStrategy(Wait.ForUnixContainer().UntilExternalTcpPortIsAvailable(RedisPort))
             .Build();
 
         if (_redisContainer == null) Assert.Fail("Redis container not started");
 
         await _redisContainer!.StartAsync();
+        
+        // Wait a bit for Redis to be fully ready
+        await Task.Delay(1000);
+        
         var container = _redisContainer!;
         var host = container.Hostname;
         var port = container.GetMappedPublicPort(RedisPort);
         var endpoint = $"{host}:{port}";
 
         // create the connection multiplexer and register it in DI
-        using var mux = await ConnectionMultiplexer.ConnectAsync(endpoint);
+        _connectionMultiplexer = await ConnectionMultiplexer.ConnectAsync(endpoint);
 
         var services = new ServiceCollection();
+        services.AddLogging();
         services.AddDistributedLockManager();
-        services.AddSingleton<IConnectionMultiplexer>(mux);
+        services.AddSingleton<IConnectionMultiplexer>(_connectionMultiplexer);
 
         var provider = services.BuildServiceProvider();
 
@@ -53,6 +59,9 @@ public class DistributedLockServiceIntegrationTests
     [OneTimeTearDown]
     public async Task OneTimeTearDown()
     {
+        scope?.Dispose();
+        _connectionMultiplexer?.Dispose();
+        
         if (_redisContainer is not null)
             await _redisContainer.StopAsync();
     }

@@ -1,25 +1,14 @@
 using DistributedLockManager.Interfaces;
-using RedLockNet.SERedis;
-using RedLockNet.SERedis.Configuration;
-using StackExchange.Redis;
+using RedLockNet;
 
 namespace DistributedLockManager.Services;
 
-public class DistributedLockService : IDistributedLockService
+public class DistributedLockService(IDistributedLockFactory distributedLockFactory) : IDistributedLockService
 {
-    private readonly RedLockFactory _redLockFactory;
-    public DistributedLockService(IConnectionMultiplexer connectionMultiplexer)
-    {
-        var endPoints = connectionMultiplexer.GetEndPoints();
-        List<RedLockEndPoint> redLockEndPoints = [.. endPoints];
-
-        _redLockFactory = RedLockFactory.Create(redLockEndPoints);
-    }
-
     public async Task RunWithLockAsync(Func<Task> func, string key, CancellationToken cancellationToken, int expiryInSecond = 30, int waitInSecond = 10, int retryInSecond = 1)
     {
         // blocks until acquired or 'wait' timeout
-        await using var redLock = await _redLockFactory.CreateLockAsync(key, TimeSpan.FromSeconds(expiryInSecond), TimeSpan.FromSeconds(waitInSecond),
+        await using var redLock = await distributedLockFactory.CreateLockAsync(key, TimeSpan.FromSeconds(expiryInSecond), TimeSpan.FromSeconds(waitInSecond),
             TimeSpan.FromSeconds(retryInSecond), cancellationToken);
 
         if (redLock.IsAcquired)
@@ -29,7 +18,7 @@ public class DistributedLockService : IDistributedLockService
     public async Task RunWithLockAsync(Task task, string key, CancellationToken cancellationToken, int expiryInSecond = 30, int waitInSecond = 10, int retryInSecond = 1)
     {
         // blocks until acquired or 'wait' timeout
-        await using var redLock = await _redLockFactory.CreateLockAsync(key, TimeSpan.FromSeconds(expiryInSecond), TimeSpan.FromSeconds(waitInSecond),
+        await using var redLock = await distributedLockFactory.CreateLockAsync(key, TimeSpan.FromSeconds(expiryInSecond), TimeSpan.FromSeconds(waitInSecond),
             TimeSpan.FromSeconds(retryInSecond), cancellationToken);
 
         if (redLock.IsAcquired)
@@ -37,21 +26,12 @@ public class DistributedLockService : IDistributedLockService
     }
 }
 
-public class DistributedLockService<TResult> : IDistributedLockService<TResult>
+public class DistributedLockService<TResult>(IDistributedLockFactory distributedLockFactory) : IDistributedLockService<TResult>
 {
-    private readonly RedLockFactory _redLockFactory;
-    public DistributedLockService(IConnectionMultiplexer connectionMultiplexer)
-    {
-        var endPoints = connectionMultiplexer.GetEndPoints();
-        List<RedLockEndPoint> redLockEndPoints = [.. endPoints];
-
-        _redLockFactory = RedLockFactory.Create(redLockEndPoints);
-    }
-
     public async Task<TResult> RunWithLockAsync(Func<Task<TResult>> func, string key, CancellationToken cancellationToken, int expiryInSecond = 30, int waitInSecond = 10, int retryInSecond = 1)
     {
         // blocks until acquired or 'wait' timeout
-        await using var redLock = await _redLockFactory.CreateLockAsync(key, 
+        await using var redLock = await distributedLockFactory.CreateLockAsync(key, 
             expiryTime: TimeSpan.FromSeconds(expiryInSecond), 
             waitTime: TimeSpan.FromSeconds(waitInSecond),
             retryTime: TimeSpan.FromSeconds(retryInSecond), cancellationToken);
@@ -66,7 +46,7 @@ public class DistributedLockService<TResult> : IDistributedLockService<TResult>
     public async Task<TResult> RunWithLockAsync(Task<TResult> task, string key, CancellationToken cancellationToken, int expiryInSecond = 30, int waitInSecond = 10, int retryInSecond = 1)
     {
         // blocks until acquired or 'wait' timeout
-        await using var redLock = await _redLockFactory.CreateLockAsync(key, TimeSpan.FromSeconds(expiryInSecond), TimeSpan.FromSeconds(waitInSecond),
+        await using var redLock = await distributedLockFactory.CreateLockAsync(key, TimeSpan.FromSeconds(expiryInSecond), TimeSpan.FromSeconds(waitInSecond),
             TimeSpan.FromSeconds(retryInSecond), cancellationToken);
 
         if (redLock.IsAcquired)
