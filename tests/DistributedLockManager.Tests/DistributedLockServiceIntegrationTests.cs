@@ -17,7 +17,7 @@ public class DistributedLockServiceIntegrationTests
 {
     private IServiceScope? scope;
     private IContainer? _redisContainer;
-    private IConnectionMultiplexer? _connectionMultiplexer;
+    private ConnectionMultiplexer? _connectionMultiplexer;
     private const string RedisImage = "redis:latest";
     private const int RedisPort = 6379;
 
@@ -60,7 +60,8 @@ public class DistributedLockServiceIntegrationTests
     public async Task OneTimeTearDown()
     {
         scope?.Dispose();
-        _connectionMultiplexer?.Dispose();
+        if (_connectionMultiplexer is not null)
+            await _connectionMultiplexer.DisposeAsync();
         
         if (_redisContainer is not null)
             await _redisContainer.StopAsync();
